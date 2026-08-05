@@ -100,9 +100,6 @@ export default async function AuthorsPage() {
                     <h2 className="font-newsreader text-2xl font-bold text-charcoal group-hover:text-coral transition-colors">
                       {author.name}
                     </h2>
-                    <p className="text-xs font-manrope text-charcoal/60 leading-relaxed mt-2">
-                      A celebrated voice in {author.category.toLowerCase()}, known for insightful research and profound contributions to contemporary literature.
-                    </p>
                   </div>
 
                   {/* Published Titles List */}
