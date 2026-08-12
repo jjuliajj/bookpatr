@@ -1,5 +1,5 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
-  (process.env.NODE_ENV === 'development' ? 'http://localhost:5000/api' : 'https://logbook-park-e821.vercel.app/api');
+  (process.env.NODE_ENV === 'development' ? 'http://localhost:5000/api' : 'https://logbook-snowy-gamma.vercel.app/api');
 
 export interface Book {
   id: string;
@@ -22,10 +22,15 @@ export interface Book {
 export async function getBooks(): Promise<Book[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/books`, { next: { revalidate: 60 } });
-    if (!res.ok) throw new Error('Failed to fetch books');
-    return res.json();
+    if (!res.ok) throw new Error(`Failed to fetch books: ${res.status}`);
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      console.error("API response is not JSON:", contentType);
+      return [];
+    }
+    return await res.json();
   } catch (error) {
-    console.error(error);
+    console.error("getBooks error:", error);
     return [];
   }
 }
@@ -34,9 +39,14 @@ export async function getBook(id: string): Promise<Book | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/books/${id}`, { next: { revalidate: 60 } });
     if (!res.ok) return null;
-    return res.json();
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      console.error("API response is not JSON:", contentType);
+      return null;
+    }
+    return await res.json();
   } catch (error) {
-    console.error(error);
+    console.error("getBook error:", error);
     return null;
   }
 }

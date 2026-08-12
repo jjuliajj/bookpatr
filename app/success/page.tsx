@@ -21,7 +21,7 @@ function SuccessContent() {
     }
 
     if (sessionId) {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://logbook-park-e821.vercel.app/api';
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://logbook-snowy-gamma.vercel.app/api';
       fetch(`${API_BASE_URL}/checkout/session/${sessionId}`)
         .then(res => res.json())
         .then(data => {
