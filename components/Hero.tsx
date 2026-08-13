@@ -21,7 +21,7 @@ export default function Hero() {
               <Sparkles className="w-3.5 h-3.5" /> Established 2026 • Digital Archival Library
             </div>
 
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-newsreader font-bold text-charcoal leading-[1.12]">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-newsreader font-bold text-charcoal leading-[1.12]">
               Literature as an <br />
               <span className="text-coral italic font-normal">Artisanal Experience</span>
             </h1>
@@ -64,30 +64,30 @@ export default function Hero() {
 
           {/* Right Visual Card Column */}
           <div className="lg:col-span-5 relative">
-            <div className="relative aspect-[4/3] lg:aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border border-charcoal/10 group">
+            <div className="relative aspect-[3/4] sm:aspect-[4/3] lg:aspect-[4/5] min-h-[380px] sm:min-h-[420px] lg:min-h-0 rounded-3xl overflow-hidden shadow-2xl border border-charcoal/10 group">
               <img 
                 src="/hero-book.jpg" 
                 alt="Curated Books" 
                 className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-700" 
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-charcoal/90 via-charcoal/30 to-transparent" />
 
               {/* Floating Rating Badge */}
-              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/40 shadow-md flex items-center gap-1.5 text-xs font-bold text-charcoal font-manrope">
+              <div className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-white/90 backdrop-blur-md px-3 sm:px-3.5 py-1 sm:py-1.5 rounded-full border border-white/40 shadow-md flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-charcoal font-manrope z-10">
                 <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
                 <span>4.9 / 5.0 Rating</span>
               </div>
 
               {/* Bottom Card Title Overlay */}
-              <div className="absolute bottom-6 left-6 right-6 text-paper-beige space-y-1">
+              <div className="absolute bottom-4 left-4 right-4 sm:bottom-6 sm:left-6 sm:right-6 text-paper-beige space-y-1 z-10">
                 <div className="text-[10px] font-manrope font-bold uppercase tracking-widest text-coral">
                   Featured Masterpiece
                 </div>
-                <div className="text-xl font-newsreader font-bold text-white flex items-center gap-2">
-                  <BookOpen className="w-5 h-5 text-coral" />
-                  <span>The Essential Confidence Handbook</span>
+                <div className="text-base sm:text-lg md:text-xl font-newsreader font-bold text-white flex items-center gap-2 leading-snug">
+                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-coral flex-shrink-0" />
+                  <span className="line-clamp-2">The Essential Confidence Handbook</span>
                 </div>
-                <p className="text-xs font-manrope text-paper-beige/70 line-clamp-1">
+                <p className="text-[11px] sm:text-xs font-manrope text-paper-beige/70 line-clamp-1">
                   Martin Chavez • Archival Edition 2026
                 </p>
               </div>
