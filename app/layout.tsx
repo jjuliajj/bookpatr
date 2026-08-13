@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Newsreader, Manrope } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/lib/CartContext";
+import ScrollToTop from "@/components/ScrollToTop";
 
 const newsreader = Newsreader({
   variable: "--font-newsreader",
@@ -24,6 +25,9 @@ export const metadata: Metadata = {
   },
   description: "A premium online bookstore and digital library for literature, philosophy, non-fiction, and artisanal EPUB e-books.",
   keywords: ["eBookMarket", "Digital Library", "EPUB Books", "eBooks Store", "Literature", "Artisanal Books", "Digital Reading"],
+  alternates: {
+    canonical: siteUrl,
+  },
   authors: [{ name: "eBookMarket Library Team" }],
   creator: "eBookMarket Library",
   publisher: "eBookMarket Library",
@@ -66,8 +70,8 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
     apple: "/icon.png",
   },
   verification: {
@@ -80,6 +84,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const websiteSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "eBookMarket Library",
+    "alternateName": ["eBookMarket", "LogicNode eBookMarket"],
+    "url": siteUrl,
+  };
+
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -105,6 +117,10 @@ export default function RootLayout({
         <meta name="google-site-verification" content="3JFpYTJYyekSzxi08IGfboOvGItI6WtJcXnpSMZpcFU" />
         <script
           type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
+        <script
+          type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
         />
       </head>
@@ -113,6 +129,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <CartProvider>
+          <ScrollToTop />
           {children}
         </CartProvider>
       </body>
