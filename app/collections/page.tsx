@@ -9,15 +9,34 @@ export const metadata: Metadata = {
   description: "Browse our complete library catalog of curated EPUB e-books, rare editions, and literature collections.",
 };
 
-export default async function CollectionsPage({ searchParams }: { searchParams: Promise<{ genre?: string }> }) {
-  const { genre } = await searchParams;
+export default async function CollectionsPage({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ genre?: string; category?: string; search?: string }> 
+}) {
+  const resolvedParams = await searchParams;
+  const targetCategory = resolvedParams.category || resolvedParams.genre;
+  const targetSearch = resolvedParams.search;
   const books = await getBooks();
   
-  const filteredBooks = genre 
-    ? books.filter(b => b.category.toLowerCase() === genre.toLowerCase())
-    : books;
+  let filteredBooks = books;
 
-  const categories = Array.from(new Set(filteredBooks.map((b) => b.category)));
+  if (targetCategory) {
+    filteredBooks = filteredBooks.filter(b => 
+      b.category && b.category.toLowerCase() === targetCategory.toLowerCase()
+    );
+  }
+
+  if (targetSearch) {
+    const s = targetSearch.toLowerCase();
+    filteredBooks = filteredBooks.filter(b => 
+      b.title.toLowerCase().includes(s) || 
+      b.author.toLowerCase().includes(s)
+    );
+  }
+
+  const categories = Array.from(new Set(filteredBooks.map((b) => b.category).filter(Boolean)));
+
 
   return (
     <main className="flex min-h-screen flex-col bg-paper-beige">
