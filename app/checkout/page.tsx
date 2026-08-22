@@ -13,13 +13,29 @@ import {
   Loader2, 
   BookOpen, 
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  AlertCircle,
+  X
 } from "lucide-react";
 
 export default function CheckoutPage() {
   const { cartItems, allBooks, cartCount, cartTotal, isMounted } = useCart();
   const [loading, setLoading] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+
+  const [noticeModal, setNoticeModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type?: 'info' | 'warning' | 'error';
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info"
+  });
 
   const fullCartItems = cartItems.map(item => {
     const book = allBooks.find(b => b.id === item.id);
@@ -29,18 +45,23 @@ export default function CheckoutPage() {
   if (!isMounted) return null;
 
   const handleCheckout = async () => {
+    const itemsForStripe = cartItems.map(item => {
+      const book = allBooks.find(b => b.id === item.id);
+      return { ...book, quantity: item.quantity };
+    }).filter(item => item.title);
+
+    if (itemsForStripe.length === 0) {
+      setNoticeModal({
+        isOpen: true,
+        title: "Your Cart is Empty",
+        message: "Please add at least one book to your cart before proceeding to checkout.",
+        type: "warning"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      const itemsForStripe = cartItems.map(item => {
-        const book = allBooks.find(b => b.id === item.id);
-        return { ...book, quantity: item.quantity };
-      }).filter(item => item.title);
-
-      if (itemsForStripe.length === 0) {
-        alert("Your cart is empty!");
-        return;
-      }
-
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
         (process.env.NODE_ENV === 'development' ? 'http://localhost:5000/api' : 'https://logbook-snowy-gamma.vercel.app/api');
 
@@ -56,17 +77,25 @@ export default function CheckoutPage() {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create checkout session');
+        throw new Error(data.details || data.error || 'Payment gateway initialization failed');
       }
 
       if (data.url) {
         window.location.href = data.url;
       } else {
-        throw new Error('No checkout URL returned');
+        throw new Error('No checkout URL returned from payment server');
       }
     } catch (error: any) {
-      console.error("Checkout failed:", error);
-      alert(`Checkout Error: ${error.message || "Payment failed to initialize"}`);
+      // Log technical error purely in developer console - completely hidden from screen
+      console.error("[Stripe Gateway Technical Log]:", error);
+
+      // Display professional user-friendly popup banner
+      setNoticeModal({
+        isOpen: true,
+        title: "Payment Service Notice",
+        message: "We are currently initializing the secure checkout channel. Please wait a few seconds and try again, or feel free to reach out to our customer support.",
+        type: "info"
+      });
     } finally {
       setLoading(false);
     }
@@ -100,6 +129,8 @@ export default function CheckoutPage() {
                     <label className="block text-xs font-manrope font-bold text-charcoal/60 mb-1">First Name</label>
                     <input 
                       type="text" 
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
                       placeholder="Jane"
                       className="w-full min-w-0 bg-white border border-charcoal/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-manrope text-charcoal focus:outline-none focus:ring-2 focus:ring-coral/20 focus:border-coral transition-all" 
                     />
@@ -108,6 +139,8 @@ export default function CheckoutPage() {
                     <label className="block text-xs font-manrope font-bold text-charcoal/60 mb-1">Last Name</label>
                     <input 
                       type="text" 
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
                       placeholder="Doe"
                       className="w-full min-w-0 bg-white border border-charcoal/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-manrope text-charcoal focus:outline-none focus:ring-2 focus:ring-coral/20 focus:border-coral transition-all" 
                     />
@@ -139,7 +172,7 @@ export default function CheckoutPage() {
                       </div>
                       <div className="min-w-0">
                         <div className="text-xs font-bold text-charcoal font-manrope truncate">Stripe Secure Checkout</div>
-                        <div className="text-[10px] sm:text-[11px] text-charcoal/50 truncate">Credit / Debit Card, Apple Pay</div>
+                        <div className="text-[10px] sm:text-[11px] text-charcoal/50 truncate">Credit / Debit Card, Apple Pay, Link</div>
                       </div>
                     </div>
                     <CheckCircle2 className="w-5 h-5 text-coral flex-shrink-0" />
@@ -204,7 +237,7 @@ export default function CheckoutPage() {
                 <button 
                   onClick={handleCheckout}
                   disabled={loading || cartItems.length === 0}
-                  className="w-full bg-coral hover:bg-coral/90 text-white py-4 rounded-full font-manrope font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-coral/30 flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full bg-coral hover:bg-coral/90 text-white py-4 rounded-full font-manrope font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-coral/30 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? (
                     <>
@@ -229,6 +262,39 @@ export default function CheckoutPage() {
           </div>
         </div>
       </section>
+
+      {/* Professional Branded Modal Popup */}
+      {noticeModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-charcoal/10 text-center relative animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setNoticeModal({ ...noticeModal, isOpen: false })}
+              className="absolute top-5 right-5 text-charcoal/40 hover:text-charcoal transition-colors p-1 rounded-full hover:bg-charcoal/5"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="w-14 h-14 rounded-full bg-coral/10 text-coral flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-7 h-7" />
+            </div>
+
+            <h3 className="font-newsreader text-2xl font-bold text-charcoal mb-2">
+              {noticeModal.title}
+            </h3>
+
+            <p className="font-manrope text-xs sm:text-sm text-charcoal/70 leading-relaxed mb-6">
+              {noticeModal.message}
+            </p>
+
+            <button
+              onClick={() => setNoticeModal({ ...noticeModal, isOpen: false })}
+              className="w-full bg-charcoal hover:bg-charcoal/90 text-white font-manrope font-bold text-xs uppercase tracking-wider py-3.5 rounded-full transition-all duration-200 shadow-md cursor-pointer"
+            >
+              Understand & Continue
+            </button>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </main>
