@@ -19,6 +19,7 @@ import {
 export default function CheckoutPage() {
   const { cartItems, allBooks, cartCount, cartTotal, isMounted } = useCart();
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
 
   const fullCartItems = cartItems.map(item => {
     const book = allBooks.find(b => b.id === item.id);
@@ -46,7 +47,11 @@ export default function CheckoutPage() {
       const response = await fetch(`${API_BASE_URL}/checkout/create-checkout-session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: itemsForStripe, site_id: 'bookpatr' }),
+        body: JSON.stringify({ 
+          items: itemsForStripe, 
+          site_id: 'bookpatr',
+          customer_email: email.trim() || undefined
+        }),
       });
 
       const data = await response.json();
@@ -111,6 +116,8 @@ export default function CheckoutPage() {
                     <label className="block text-xs font-manrope font-bold text-charcoal/60 mb-1">Email Address (for EPUB Delivery)</label>
                     <input 
                       type="email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       placeholder="jane.doe@example.com"
                       className="w-full min-w-0 bg-white border border-charcoal/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-manrope text-charcoal focus:outline-none focus:ring-2 focus:ring-coral/20 focus:border-coral transition-all" 
                     />
