@@ -14,6 +14,7 @@ function SuccessContent() {
   const paypalOrderId = searchParams.get("paypal_order_id") || searchParams.get("order_id") || searchParams.get("token");
   const provider = searchParams.get("provider") || (paypalOrderId ? "paypal" : "stripe");
   const [purchasedBooks, setPurchasedBooks] = useState<any[]>([]);
+  const [orderCode, setOrderCode] = useState<string | null>(searchParams.get("order_code"));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,6 +38,7 @@ function SuccessContent() {
       })
         .then(res => res.json())
         .then(data => {
+          if (data.orderCode) setOrderCode(data.orderCode);
           if (data.books && data.books.length > 0) {
             setPurchasedBooks(data.books);
           } else {
@@ -44,6 +46,7 @@ function SuccessContent() {
             return fetch(`${API_BASE_URL}/checkout/session/${paypalOrderId}?provider=paypal&site_id=bookpatr`)
               .then(res => res.json())
               .then(fallbackData => {
+                if (fallbackData.orderCode) setOrderCode(fallbackData.orderCode);
                 if (fallbackData.books) setPurchasedBooks(fallbackData.books);
               });
           }
@@ -55,6 +58,7 @@ function SuccessContent() {
       fetch(`${API_BASE_URL}/checkout/session/${sessionId}?site_id=bookpatr`)
         .then(res => res.json())
         .then(data => {
+          if (data.orderCode) setOrderCode(data.orderCode);
           if (data.books) {
             setPurchasedBooks(data.books);
           }
@@ -69,16 +73,22 @@ function SuccessContent() {
   return (
     <section className="pt-48 pb-24 flex-grow flex items-center justify-center">
       <div className="text-center max-w-2xl px-6 w-full">
-        <div className="w-24 h-24 bg-coral/10 rounded-full flex items-center justify-center mx-auto mb-12">
+        <div className="w-24 h-24 bg-coral/10 rounded-full flex items-center justify-center mx-auto mb-8">
           <svg className="w-10 h-10 text-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
           </svg>
         </div>
-        <h1 className="text-5xl font-newsreader font-semibold text-charcoal mb-8">
+        <h1 className="text-4xl sm:text-5xl font-newsreader font-semibold text-charcoal mb-3">
           Order Confirmed
         </h1>
-        <p className="text-lg font-manrope text-charcoal/60 leading-relaxed mb-12 italic">
-          Thank you for your purchase. Your literary treasures are ready for download.
+        {orderCode && (
+          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-charcoal/5 border border-charcoal/10 font-mono text-xs font-bold text-charcoal mb-6">
+            <span>Order Code:</span>
+            <span className="text-coral">#{orderCode}</span>
+          </div>
+        )}
+        <p className="text-sm sm:text-base font-manrope text-charcoal/60 leading-relaxed mb-10 italic">
+          Thank you for your purchase. Your digital literary treasures are ready for download.
         </p>
 
         {loading ? (

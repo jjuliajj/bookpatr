@@ -61,20 +61,48 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Required Fields Validation
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+      setNoticeModal({
+        isOpen: true,
+        title: "Required Information Missing",
+        message: "Please enter your First Name, Last Name, and Email Address to receive your digital books and order confirmation.",
+        type: "warning"
+      });
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setNoticeModal({
+        isOpen: true,
+        title: "Invalid Email Address",
+        message: "Please provide a valid email format (e.g. yourname@example.com) to receive your e-book downloads.",
+        type: "warning"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
         (process.env.NODE_ENV === 'development' ? 'http://localhost:5000/api' : 'https://logbook-snowy-gamma.vercel.app/api');
 
+      const customerPayload = {
+        items: itemsForPayment, 
+        site_id: 'bookpatr',
+        customer_name: `${firstName.trim()} ${lastName.trim()}`,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        customer_email: email.trim(),
+        email: email.trim()
+      };
+
       if (paymentMethod === 'paypal') {
         const response = await fetch(`${API_BASE_URL}/checkout/paypal/create-order`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            items: itemsForPayment, 
-            site_id: 'bookpatr',
-            customer_email: email.trim() || undefined
-          }),
+          body: JSON.stringify(customerPayload),
         });
 
         const data = await response.json();
@@ -92,11 +120,7 @@ export default function CheckoutPage() {
         const response = await fetch(`${API_BASE_URL}/checkout/create-checkout-session`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            items: itemsForPayment, 
-            site_id: 'bookpatr',
-            customer_email: email.trim() || undefined
-          }),
+          body: JSON.stringify(customerPayload),
         });
 
         const data = await response.json();
