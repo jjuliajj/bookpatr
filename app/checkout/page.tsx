@@ -315,17 +315,29 @@ export default function CheckoutPage() {
                 <button 
                   onClick={handleCheckout}
                   disabled={loading || cartItems.length === 0}
-                  className="w-full bg-coral hover:bg-coral/90 text-white py-4 rounded-full font-manrope font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-coral/30 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                  className={`w-full text-white py-4 rounded-full font-manrope font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer ${
+                    paymentMethod === 'paypal'
+                      ? 'bg-[#0070BA] hover:bg-[#005ea6] shadow-blue-500/30'
+                      : 'bg-coral hover:bg-coral/90 shadow-coral/30'
+                  }`}
                 >
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Redirecting to Stripe...</span>
+                      <span>{paymentMethod === 'paypal' ? 'Redirecting to PayPal...' : 'Redirecting to Stripe...'}</span>
                     </>
                   ) : (
                     <>
-                      <Lock className="w-4 h-4" />
-                      <span>Complete Purchase (${cartTotal.toFixed(2)})</span>
+                      {paymentMethod === 'paypal' ? (
+                        <span className="font-extrabold text-sm mr-0.5">P</span>
+                      ) : (
+                        <Lock className="w-4 h-4" />
+                      )}
+                      <span>
+                        {paymentMethod === 'paypal'
+                          ? `Pay with PayPal ($${cartTotal.toFixed(2)})`
+                          : `Complete Purchase ($${cartTotal.toFixed(2)})`}
+                      </span>
                     </>
                   )}
                 </button>
