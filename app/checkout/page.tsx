@@ -24,6 +24,7 @@ export default function CheckoutPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>('stripe');
 
   const [noticeModal, setNoticeModal] = useState<{
     isOpen: boolean;
@@ -45,12 +46,12 @@ export default function CheckoutPage() {
   if (!isMounted) return null;
 
   const handleCheckout = async () => {
-    const itemsForStripe = cartItems.map(item => {
+    const itemsForPayment = cartItems.map(item => {
       const book = allBooks.find(b => b.id === item.id);
-      return { ...book, quantity: item.quantity };
+      return { ...book, quantity: item.quantity, id: item.id };
     }).filter(item => item.title);
 
-    if (itemsForStripe.length === 0) {
+    if (itemsForPayment.length === 0) {
       setNoticeModal({
         isOpen: true,
         title: "Your Cart is Empty",
@@ -65,29 +66,53 @@ export default function CheckoutPage() {
       const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
         (process.env.NODE_ENV === 'development' ? 'http://localhost:5000/api' : 'https://logbook-snowy-gamma.vercel.app/api');
 
-      const response = await fetch(`${API_BASE_URL}/checkout/create-checkout-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          items: itemsForStripe, 
-          site_id: 'bookpatr',
-          customer_email: email.trim() || undefined
-        }),
-      });
+      if (paymentMethod === 'paypal') {
+        const response = await fetch(`${API_BASE_URL}/checkout/paypal/create-order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            items: itemsForPayment, 
+            site_id: 'bookpatr',
+            customer_email: email.trim() || undefined
+          }),
+        });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.details || data.error || 'Payment gateway initialization failed');
-      }
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.details || data.error || 'PayPal payment gateway initialization failed');
+        }
 
-      if (data.url) {
-        window.location.href = data.url;
+        const redirectUrl = data.approvalUrl || data.url;
+        if (redirectUrl) {
+          window.location.href = redirectUrl;
+        } else {
+          throw new Error('No PayPal checkout URL returned from payment server');
+        }
       } else {
-        throw new Error('No checkout URL returned from payment server');
+        const response = await fetch(`${API_BASE_URL}/checkout/create-checkout-session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            items: itemsForPayment, 
+            site_id: 'bookpatr',
+            customer_email: email.trim() || undefined
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.details || data.error || 'Payment gateway initialization failed');
+        }
+
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          throw new Error('No checkout URL returned from payment server');
+        }
       }
     } catch (error: any) {
       // Log technical error purely in developer console - completely hidden from screen
-      console.error("[Stripe Gateway Technical Log]:", error);
+      console.error(`[${paymentMethod.toUpperCase()} Gateway Technical Log]:`, error);
 
       // Display professional user-friendly popup banner
       setNoticeModal({
@@ -121,32 +146,38 @@ export default function CheckoutPage() {
               <div>
                 <h2 className="text-lg sm:text-xl font-newsreader font-bold text-charcoal mb-4 flex items-center gap-2 border-b border-charcoal/10 pb-3">
                   <span className="w-6 h-6 rounded-full bg-coral text-white text-xs font-bold font-manrope flex items-center justify-center flex-shrink-0">1</span>
-                  Contact & Delivery Details
+                  Customer & Delivery Information
                 </h2>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  <div className="col-span-1">
-                    <label className="block text-xs font-manrope font-bold text-charcoal/60 mb-1">First Name</label>
-                    <input 
-                      type="text" 
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Jane"
-                      className="w-full min-w-0 bg-white border border-charcoal/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-manrope text-charcoal focus:outline-none focus:ring-2 focus:ring-coral/20 focus:border-coral transition-all" 
-                    />
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <div>
+                      <label className="block text-xs font-manrope font-bold text-charcoal/70 mb-1.5 uppercase tracking-wider">First Name</label>
+                      <input 
+                        type="text" 
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="Jane"
+                        className="w-full min-w-0 bg-white border border-charcoal/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-manrope text-charcoal focus:outline-none focus:ring-2 focus:ring-coral/20 focus:border-coral transition-all" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-manrope font-bold text-charcoal/70 mb-1.5 uppercase tracking-wider">Last Name</label>
+                      <input 
+                        type="text" 
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        placeholder="Doe"
+                        className="w-full min-w-0 bg-white border border-charcoal/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-manrope text-charcoal focus:outline-none focus:ring-2 focus:ring-coral/20 focus:border-coral transition-all" 
+                      />
+                    </div>
                   </div>
-                  <div className="col-span-1">
-                    <label className="block text-xs font-manrope font-bold text-charcoal/60 mb-1">Last Name</label>
-                    <input 
-                      type="text" 
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Doe"
-                      className="w-full min-w-0 bg-white border border-charcoal/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-manrope text-charcoal focus:outline-none focus:ring-2 focus:ring-coral/20 focus:border-coral transition-all" 
-                    />
-                  </div>
-                  <div className="col-span-1 sm:col-span-2">
-                    <label className="block text-xs font-manrope font-bold text-charcoal/60 mb-1">Email Address (for EPUB Delivery)</label>
+
+                  <div>
+                    <label className="block text-xs font-manrope font-bold text-charcoal/70 mb-1.5 uppercase tracking-wider">
+                      Email Address <span className="text-coral">*</span>
+                      <span className="text-[10px] text-charcoal/40 font-normal ml-1 lowercase font-sans">(for digital book delivery)</span>
+                    </label>
                     <input 
                       type="email" 
                       value={email}
@@ -161,21 +192,68 @@ export default function CheckoutPage() {
               <div>
                 <h2 className="text-lg sm:text-xl font-newsreader font-bold text-charcoal mb-4 flex items-center gap-2 border-b border-charcoal/10 pb-3">
                   <span className="w-6 h-6 rounded-full bg-coral text-white text-xs font-bold font-manrope flex items-center justify-center flex-shrink-0">2</span>
-                  Payment Gateway
+                  Select Payment Gateway
                 </h2>
                 
                 <div className="space-y-3">
-                  <div className="bg-white border-2 border-coral p-3.5 sm:p-4 rounded-2xl flex items-center justify-between shadow-xs gap-3">
+                  {/* Stripe Option */}
+                  <div 
+                    onClick={() => setPaymentMethod('stripe')}
+                    className={`p-3.5 sm:p-4 rounded-2xl flex items-center justify-between shadow-xs gap-3 cursor-pointer transition-all border-2 ${
+                      paymentMethod === 'stripe' 
+                        ? 'bg-white border-coral ring-2 ring-coral/10' 
+                        : 'bg-white/80 border-charcoal/10 hover:border-charcoal/30'
+                    }`}
+                  >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-coral/10 text-coral flex items-center justify-center flex-shrink-0">
-                        <CreditCard className="w-4 h-4" />
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                        paymentMethod === 'stripe' ? 'bg-coral/10 text-coral' : 'bg-charcoal/5 text-charcoal/50'
+                      }`}>
+                        <CreditCard className="w-5 h-5" />
                       </div>
                       <div className="min-w-0">
-                        <div className="text-xs font-bold text-charcoal font-manrope truncate">Stripe Secure Checkout</div>
-                        <div className="text-[10px] sm:text-[11px] text-charcoal/50 truncate">Credit / Debit Card, Apple Pay, Link</div>
+                        <div className="text-xs font-bold text-charcoal font-manrope flex items-center gap-2">
+                          <span>Credit / Debit Card</span>
+                          <span className="text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Stripe</span>
+                        </div>
+                        <div className="text-[10px] sm:text-[11px] text-charcoal/50 truncate">Visa, MasterCard, American Express, Apple Pay</div>
                       </div>
                     </div>
-                    <CheckCircle2 className="w-5 h-5 text-coral flex-shrink-0" />
+                    {paymentMethod === 'stripe' ? (
+                      <CheckCircle2 className="w-5 h-5 text-coral flex-shrink-0" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-charcoal/20 flex-shrink-0" />
+                    )}
+                  </div>
+
+                  {/* PayPal Option */}
+                  <div 
+                    onClick={() => setPaymentMethod('paypal')}
+                    className={`p-3.5 sm:p-4 rounded-2xl flex items-center justify-between shadow-xs gap-3 cursor-pointer transition-all border-2 ${
+                      paymentMethod === 'paypal' 
+                        ? 'bg-white border-[#0079C1] ring-2 ring-blue-500/10' 
+                        : 'bg-white/80 border-charcoal/10 hover:border-charcoal/30'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors font-extrabold text-sm ${
+                        paymentMethod === 'paypal' ? 'bg-blue-50 text-[#0079C1]' : 'bg-charcoal/5 text-charcoal/50'
+                      }`}>
+                        P
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-charcoal font-manrope flex items-center gap-2">
+                          <span>PayPal Express</span>
+                          <span className="text-[10px] font-semibold bg-blue-50 text-[#0079C1] px-1.5 py-0.5 rounded border border-blue-200">PayPal</span>
+                        </div>
+                        <div className="text-[10px] sm:text-[11px] text-charcoal/50 truncate">PayPal Balance, Linked Bank Accounts, Pay Later</div>
+                      </div>
+                    </div>
+                    {paymentMethod === 'paypal' ? (
+                      <CheckCircle2 className="w-5 h-5 text-[#0079C1] flex-shrink-0" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full border-2 border-charcoal/20 flex-shrink-0" />
+                    )}
                   </div>
                 </div>
               </div>

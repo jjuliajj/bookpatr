@@ -11,6 +11,8 @@ function SuccessContent() {
   const { cartItems, removeFromCart } = useCart();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
+  const paypalOrderId = searchParams.get("paypal_order_id") || searchParams.get("order_id") || searchParams.get("token");
+  const provider = searchParams.get("provider") || (paypalOrderId ? "paypal" : "stripe");
   const [purchasedBooks, setPurchasedBooks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,21 +22,49 @@ function SuccessContent() {
       cartItems.forEach(item => removeFromCart(item.id));
     }
 
-    if (sessionId) {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://logbook-snowy-gamma.vercel.app/api';
-      fetch(`${API_BASE_URL}/checkout/session/${sessionId}`)
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://logbook-snowy-gamma.vercel.app/api';
+
+    if (paypalOrderId) {
+      // Capture and retrieve PayPal order
+      fetch(`${API_BASE_URL}/checkout/paypal/capture-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          orderId: paypalOrderId,
+          token: paypalOrderId,
+          site_id: 'bookpatr'
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.books && data.books.length > 0) {
+            setPurchasedBooks(data.books);
+          } else {
+            // Fallback to session retrieval
+            return fetch(`${API_BASE_URL}/checkout/session/${paypalOrderId}?provider=paypal&site_id=bookpatr`)
+              .then(res => res.json())
+              .then(fallbackData => {
+                if (fallbackData.books) setPurchasedBooks(fallbackData.books);
+              });
+          }
+        })
+        .catch(err => console.error("Error capturing/fetching PayPal order:", err))
+        .finally(() => setLoading(false));
+    } else if (sessionId) {
+      // Stripe checkout session
+      fetch(`${API_BASE_URL}/checkout/session/${sessionId}?site_id=bookpatr`)
         .then(res => res.json())
         .then(data => {
           if (data.books) {
             setPurchasedBooks(data.books);
           }
         })
-        .catch(err => console.error("Error fetching session:", err))
+        .catch(err => console.error("Error fetching Stripe session:", err))
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
-  }, [sessionId]);
+  }, [sessionId, paypalOrderId]);
 
   return (
     <section className="pt-48 pb-24 flex-grow flex items-center justify-center">
