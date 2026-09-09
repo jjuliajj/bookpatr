@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { Mail, Clock, ShieldCheck, ArrowLeft, Send, CheckCircle2, MessageSquare, Loader2, Headphones } from "lucide-react";
+import { trackWhop } from "@/lib/whop";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -43,10 +44,20 @@ export default function ContactPage() {
         throw new Error(data.error || 'Failed to dispatch message to support team');
       }
 
+      trackWhop("contact", {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        subject: formData.subject.trim(),
+      });
       setSubmitted(true);
     } catch (err: any) {
       console.error('Contact submission error:', err);
       // Fallback: still treat as submitted to avoid blocking the user
+      trackWhop("contact", {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        subject: formData.subject.trim(),
+      });
       setSubmitted(true);
     } finally {
       setLoading(false);

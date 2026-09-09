@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 import { useCart } from "@/lib/CartContext";
 import { useSearchParams } from "next/navigation";
+import { trackWhop } from "@/lib/whop";
 
 function SuccessContent() {
   const { cartItems, removeFromCart } = useCart();
@@ -16,12 +17,29 @@ function SuccessContent() {
   const [purchasedBooks, setPurchasedBooks] = useState<any[]>([]);
   const [orderCode, setOrderCode] = useState<string | null>(searchParams.get("order_code"));
   const [loading, setLoading] = useState(true);
+  const trackedRef = useRef(false);
 
   useEffect(() => {
     // Clear the cart after successful purchase
     if (cartItems.length > 0) {
       cartItems.forEach(item => removeFromCart(item.id));
     }
+
+    const firePurchaseTrack = (code: string | null, books: any[] = [], orderInfo?: any) => {
+      if (trackedRef.current) return;
+      trackedRef.current = true;
+      const totalAmount = books.reduce((sum, b) => {
+        const p = parseFloat(String(b.price || '0').replace(/[^0-9.]/g, '')) || 0;
+        return sum + p;
+      }, 0) || (orderInfo?.amount_total ? orderInfo.amount_total / 100 : 0.50);
+
+      trackWhop("purchase", {
+        event_id: code || sessionId || paypalOrderId || `ord_${Date.now()}`,
+        value: totalAmount > 0 ? totalAmount : 0.50,
+        currency: "USD",
+        email: orderInfo?.customer_email || orderInfo?.payer?.email_address,
+      });
+    };
 
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://logbook-snowy-gamma.vercel.app/api';
 
@@ -41,17 +59,24 @@ function SuccessContent() {
           if (data.orderCode) setOrderCode(data.orderCode);
           if (data.books && data.books.length > 0) {
             setPurchasedBooks(data.books);
+            firePurchaseTrack(data.orderCode, data.books, data.order || data.payer);
           } else {
             // Fallback to session retrieval
             return fetch(`${API_BASE_URL}/checkout/session/${paypalOrderId}?provider=paypal&site_id=bookpatr`)
               .then(res => res.json())
               .then(fallbackData => {
                 if (fallbackData.orderCode) setOrderCode(fallbackData.orderCode);
-                if (fallbackData.books) setPurchasedBooks(fallbackData.books);
+                if (fallbackData.books) {
+                  setPurchasedBooks(fallbackData.books);
+                  firePurchaseTrack(fallbackData.orderCode, fallbackData.books, fallbackData.order);
+                }
               });
           }
         })
-        .catch(err => console.error("Error capturing/fetching PayPal order:", err))
+        .catch(err => {
+          console.error("Error capturing/fetching PayPal order:", err);
+          firePurchaseTrack(orderCode, []);
+        })
         .finally(() => setLoading(false));
     } else if (sessionId) {
       // Stripe checkout session
@@ -61,12 +86,17 @@ function SuccessContent() {
           if (data.orderCode) setOrderCode(data.orderCode);
           if (data.books) {
             setPurchasedBooks(data.books);
+            firePurchaseTrack(data.orderCode, data.books, data.session || data.order);
           }
         })
-        .catch(err => console.error("Error fetching Stripe session:", err))
+        .catch(err => {
+          console.error("Error fetching Stripe session:", err);
+          firePurchaseTrack(orderCode, []);
+        })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
+      firePurchaseTrack(orderCode, []);
     }
   }, [sessionId, paypalOrderId]);
 

@@ -3,14 +3,34 @@
 import { useCart } from "@/lib/CartContext";
 import { useState } from "react";
 import { ShoppingBag, Heart, Check } from "lucide-react";
+import { trackWhop } from "@/lib/whop";
 
-export default function AddToCartActions({ bookId }: { bookId: string }) {
+interface AddToCartActionsProps {
+  bookId: string;
+  bookTitle?: string;
+  bookPrice?: number;
+  bookCategory?: string;
+}
+
+export default function AddToCartActions({
+  bookId,
+  bookTitle,
+  bookPrice,
+  bookCategory,
+}: AddToCartActionsProps) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
 
   const handleAdd = () => {
     addToCart(bookId);
     setAdded(true);
+    trackWhop("add_to_cart", {
+      content_id: bookId,
+      content_name: bookTitle,
+      content_category: bookCategory,
+      value: bookPrice,
+      currency: "USD",
+    });
     setTimeout(() => setAdded(false), 2000);
   };
 

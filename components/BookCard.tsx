@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCart } from "@/lib/CartContext";
 import { Plus } from "lucide-react";
+import { trackWhop } from "@/lib/whop";
 
 interface BookCardProps {
   id: string;
@@ -21,6 +22,15 @@ export default function BookCard({ id, title, author, price, category, image, de
     e.preventDefault();
     e.stopPropagation();
     addToCart(id, 1);
+    const rawPrice = String(price || "0").replace(/[^0-9.]/g, "");
+    const numericPrice = parseFloat(rawPrice) || undefined;
+    trackWhop("add_to_cart", {
+      content_id: id,
+      content_name: title,
+      content_category: category,
+      value: numericPrice,
+      currency: "USD",
+    });
   };
 
   const cleanDescription = (description || "").replace(/^(Introduction\s*)+/i, "").trim();

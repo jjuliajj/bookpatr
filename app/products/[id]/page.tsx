@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, BookOpen, Layers, User, Tag } from "lucide-react";
 import type { Metadata } from "next";
+import TrackViewContent from "@/components/TrackViewContent";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
@@ -150,8 +151,21 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 </div>
               </div>
 
+              {/* Track View Content Event */}
+              <TrackViewContent
+                id={book.id}
+                title={book.title}
+                price={numericPrice}
+                category={book.category}
+              />
+
               {/* Add To Cart & Direct Checkout Buttons */}
-              <AddToCartActions bookId={book.id} />
+              <AddToCartActions
+                bookId={book.id}
+                bookTitle={book.title}
+                bookPrice={numericPrice}
+                bookCategory={book.category}
+              />
 
               {/* Collapsible Introduction Section */}
               <BookDescription description={book.description} />
