@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCart } from "@/lib/CartContext";
 import { getBooks, Book } from "@/lib/api";
 import { Search, X, BookOpen, Loader2, Menu, ShoppingBag } from "lucide-react";
-import { BuyWithKofiButton, SupportKofiButton } from "@/components/KofiButtons";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -212,12 +211,6 @@ export default function Navbar() {
             <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-coral rounded-full" />
           )}
         </Link>
-
-        {/* Ko-fi Action Buttons (Desktop) */}
-        <div className="flex items-center gap-2">
-          <BuyWithKofiButton />
-          <SupportKofiButton />
-        </div>
       </div>
 
       {/* Mobile Controls Right Side (Cart Icon OUTSIDE + Hamburger Menu Toggle) */}
@@ -316,12 +309,6 @@ export default function Navbar() {
                 </Link>
               );
             })}
-          </div>
-
-          {/* Ko-fi Buttons (Mobile) */}
-          <div className="pt-2 flex flex-col gap-2.5 items-stretch">
-            <BuyWithKofiButton className="justify-center py-3 text-sm" />
-            <SupportKofiButton className="justify-center py-3 text-sm" />
           </div>
         </div>
       )}
