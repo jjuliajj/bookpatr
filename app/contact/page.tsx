@@ -179,6 +179,9 @@ export default function ContactPage() {
                         <input
                           required
                           type="text"
+                          name="name"
+                          id="name"
+                          autoComplete="name"
                           placeholder="Jane Doe"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -190,9 +193,21 @@ export default function ContactPage() {
                         <input
                           required
                           type="email"
+                          name="email"
+                          id="email"
+                          autoComplete="email"
                           placeholder="jane.doe@example.com"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          onBlur={() => {
+                            const cleanEmail = formData.email.trim();
+                            if (cleanEmail.includes("@") && cleanEmail.includes(".")) {
+                              trackWhop("identify", {
+                                email: cleanEmail,
+                                name: formData.name.trim(),
+                              });
+                            }
+                          }}
                           className="w-full bg-white border border-charcoal/15 rounded-xl px-4 py-2.5 text-sm font-manrope text-charcoal focus:outline-none focus:ring-2 focus:ring-coral/20 focus:border-coral transition-all"
                         />
                       </div>

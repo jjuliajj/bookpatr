@@ -1,4 +1,5 @@
 import Link from "next/link";
+import NewsletterForm from "@/components/NewsletterForm";
 
 export default function Footer() {
   return (
@@ -14,16 +15,7 @@ export default function Footer() {
           <p className="font-manrope text-paper-beige/60 max-w-md leading-relaxed mb-8">
             Your premium digital library and bookstore for curated literature and artisanal eBooks.
           </p>
-          <div className="flex space-x-4">
-             <input 
-               type="email" 
-               placeholder="Your email address" 
-               className="bg-paper-beige/10 border-b border-paper-beige/30 py-2 px-4 focus:outline-none focus:border-coral transition-colors flex-grow max-w-xs font-manrope text-sm"
-             />
-             <button className="text-coral font-manrope font-bold text-sm uppercase tracking-widest hover:text-white transition-colors">
-               Subscribe
-             </button>
-          </div>
+          <NewsletterForm />
         </div>
 
         <div>

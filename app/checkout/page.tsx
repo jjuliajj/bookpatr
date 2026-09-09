@@ -17,6 +17,7 @@ import {
   AlertCircle,
   X
 } from "lucide-react";
+import { trackWhop } from "@/lib/whop";
 
 export default function CheckoutPage() {
   const { cartItems, allBooks, cartCount, cartTotal, isMounted } = useCart();
@@ -82,6 +83,22 @@ export default function CheckoutPage() {
       });
       return;
     }
+
+    // Track customer identity and lead with Whop
+    trackWhop("identify", {
+      email: email.trim(),
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+    });
+    trackWhop("lead", {
+      email: email.trim(),
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+      value: cartTotal,
+      currency: "USD",
+    });
 
     setLoading(true);
     try {
@@ -179,6 +196,9 @@ export default function CheckoutPage() {
                       <label className="block text-xs font-manrope font-bold text-charcoal/70 mb-1.5 uppercase tracking-wider">First Name</label>
                       <input 
                         type="text" 
+                        name="first_name"
+                        id="first_name"
+                        autoComplete="given-name"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         placeholder="Jane"
@@ -189,6 +209,9 @@ export default function CheckoutPage() {
                       <label className="block text-xs font-manrope font-bold text-charcoal/70 mb-1.5 uppercase tracking-wider">Last Name</label>
                       <input 
                         type="text" 
+                        name="last_name"
+                        id="last_name"
+                        autoComplete="family-name"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
                         placeholder="Doe"
@@ -204,8 +227,22 @@ export default function CheckoutPage() {
                     </label>
                     <input 
                       type="email" 
+                      name="email"
+                      id="email"
+                      autoComplete="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      onBlur={() => {
+                        const cleanEmail = email.trim();
+                        if (cleanEmail.includes("@") && cleanEmail.includes(".")) {
+                          trackWhop("identify", {
+                            email: cleanEmail,
+                            first_name: firstName.trim(),
+                            last_name: lastName.trim(),
+                            name: `${firstName.trim()} ${lastName.trim()}`.trim()
+                          });
+                        }
+                      }}
                       placeholder="jane.doe@example.com"
                       className="w-full min-w-0 bg-white border border-charcoal/15 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-manrope text-charcoal focus:outline-none focus:ring-2 focus:ring-coral/20 focus:border-coral transition-all" 
                     />
