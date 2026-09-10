@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCart } from "@/lib/CartContext";
-import { Plus } from "lucide-react";
+import { Plus, Zap } from "lucide-react";
 import { trackWhop } from "@/lib/whop";
 
 interface BookCardProps {
@@ -13,10 +13,23 @@ interface BookCardProps {
   category: string;
   image: string;
   description?: string;
+  whop_checkout_url?: string;
+  whopCheckoutUrl?: string;
 }
 
-export default function BookCard({ id, title, author, price, category, image, description }: BookCardProps) {
+export default function BookCard({
+  id,
+  title,
+  author,
+  price,
+  category,
+  image,
+  description,
+  whop_checkout_url,
+  whopCheckoutUrl,
+}: BookCardProps) {
   const { addToCart } = useCart();
+  const effectiveWhopUrl = whop_checkout_url || whopCheckoutUrl;
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -31,6 +44,22 @@ export default function BookCard({ id, title, author, price, category, image, de
       value: numericPrice,
       currency: "USD",
     });
+  };
+
+  const handleDirectWhopBuy = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!effectiveWhopUrl) return;
+    const rawPrice = String(price || "0").replace(/[^0-9.]/g, "");
+    const numericPrice = parseFloat(rawPrice) || undefined;
+    trackWhop("add_to_cart", {
+      content_id: id,
+      content_name: title,
+      content_category: category,
+      value: numericPrice,
+      currency: "USD",
+    });
+    window.location.href = effectiveWhopUrl;
   };
 
   const cleanDescription = (description || "").replace(/^(Introduction\s*)+/i, "").trim();
@@ -53,11 +82,20 @@ export default function BookCard({ id, title, author, price, category, image, de
             </div>
           )}
           
-          {/* Quick Add Overlay */}
-          <div className="absolute inset-0 bg-charcoal/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2">
+          {/* Quick Action Overlay */}
+          <div className="absolute inset-0 bg-charcoal/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center p-2 gap-1.5">
+            {effectiveWhopUrl && (
+              <button
+                onClick={handleDirectWhopBuy}
+                className="bg-[#FF6243] text-white px-3 py-1.5 rounded-full font-manrope font-bold text-[9px] uppercase tracking-wider shadow-md transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-[#ff4e2b] flex items-center gap-1 w-full justify-center"
+              >
+                <Zap className="w-3 h-3 fill-white" />
+                Whop Buy
+              </button>
+            )}
             <button 
               onClick={handleQuickAdd}
-              className="bg-paper-beige text-charcoal px-3.5 py-1.5 rounded-full font-manrope font-bold text-[9px] uppercase tracking-widest shadow-md transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-coral hover:text-white flex items-center gap-1"
+              className="bg-paper-beige text-charcoal px-3 py-1.5 rounded-full font-manrope font-bold text-[9px] uppercase tracking-wider shadow-md transform translate-y-2 group-hover:translate-y-0 transition-all duration-300 hover:bg-coral hover:text-white flex items-center gap-1 w-full justify-center"
             >
               <Plus className="w-3 h-3" />
               Add Cart
@@ -65,15 +103,20 @@ export default function BookCard({ id, title, author, price, category, image, de
           </div>
 
           {category && (
-            <div className="absolute top-2 left-2">
+            <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
               <span className="bg-paper-beige/90 backdrop-blur-sm text-charcoal px-2 py-0.5 text-[8px] font-manrope font-bold uppercase tracking-wider rounded-md shadow-xs">
                 {category}
               </span>
+              {effectiveWhopUrl && (
+                <span className="bg-[#FF6243] text-white px-1.5 py-0.5 text-[7px] font-manrope font-bold uppercase tracking-widest rounded shadow-xs flex items-center gap-0.5">
+                  <Zap className="w-2.5 h-2.5 fill-white" /> Whop
+                </span>
+              )}
             </div>
           )}
         </div>
         
-        {/* Content Container with flex-col h-full & fixed title height for equal alignment */}
+        {/* Content Container */}
         <div className="flex flex-col flex-grow justify-between">
           <div>
             {/* Title with fixed 2-line height */}

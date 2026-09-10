@@ -165,6 +165,7 @@ export default async function ProductPage({ params }: { params: Promise<{ id: st
                 bookTitle={book.title}
                 bookPrice={numericPrice}
                 bookCategory={book.category}
+                whopCheckoutUrl={book.whop_checkout_url}
               />
 
               {/* Collapsible Introduction Section */}
